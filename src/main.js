@@ -279,27 +279,76 @@ const isDnaUnique = (_DnaList = new Set(), _dna = "") => {
   return !_DnaList.has(_filteredDNA);
 };
 
+const findElement = (_layers, layerName, elementName) => {
+  const foundLayer = _layers.filter(layer => layer.name == layerName)[0];
+  const foundElement = foundLayer.elements.filter(element => element.name == elementName)[0];
+  return foundElement;
+}
+
 const createDna = (_layers) => {
   let randNum = [];
+  let layerMap = new Map();
   _layers.forEach((layer) => {
+    if(layerMap.has(layer.name)) return;
     var totalWeight = 0;
     layer.elements.forEach((element) => {
       totalWeight += element.weight;
     });
-    // number between 0 - totalWeight
-    let random = Math.floor(Math.random() * totalWeight);
-    for (var i = 0; i < layer.elements.length; i++) {
-      // subtract the current weight from the random weight until we reach a sub zero value.
-      random -= layer.elements[i].weight;
-      if (random < 0) {
-        return randNum.push(
-          `${layer.elements[i].id}:${layer.elements[i].filename}${
-            layer.bypassDNA ? "?bypassDNA=true" : ""
-          }`
-        );
+    let done = false;
+    while(!done){
+      done = true;
+      // number between 0 - totalWeight
+      let random = Math.floor(Math.random() * totalWeight);
+      for (var i = 0; i < layer.elements.length; i++) {
+        // subtract the current weight from the random weight until we reach a sub zero value.
+        random -= layer.elements[i].weight;
+        if (random < 0) {
+          // Andy's custom rules here
+          const name = layer.elements[i].name;
+
+          // TODO: apply your own rules by overwriting entries in layerMap
+          // or by setting done=false to find another random element for the current layer
+          // 
+          // see https://youtu.be/tEgR85YxDeI for more info
+
+          // examples:
+          // if(layer.name==='glasses'){
+          //   if(name=='eye patch'){
+          //       layerMap.set('hair', findElement(_layers, 'hair', 'laurel wreath'));
+          //   }
+          // }
+          // if(layer.name==='hair'){
+          //   if(name.endsWith('helmet')){
+          //       layerMap.set('mouth', findElement(_layers, 'mouth', 'banana'));
+          //   }
+          // }
+          // if(layer.name==='mouth'){
+          //   if(name==='mustache'){
+          //       if(layerMap.get('glasses').name==='eye patch'){
+          //           done = false; 
+          //           console.log("found eye patch and mustache -> rerun!");
+          //       }
+          //   }
+          // }
+          
+
+          layerMap.set(layer.name, layer.elements[i]);
+          break;
+        }
       }
     }
   });
+  
+  //console.log(layerMap);
+  _layers.forEach((layer) => {
+    const element = layerMap.get(layer.name);
+    randNum.push(
+      `${element.id}:${element.filename}${
+        layer.bypassDNA ? "?bypassDNA=true" : ""
+      }`
+    );
+  });
+  //console.log(randNum.join(DNA_DELIMITER));
   return randNum.join(DNA_DELIMITER);
 };
 
